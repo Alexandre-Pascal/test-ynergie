@@ -41,7 +41,7 @@ class DossierListCreateTest(APITestCase):
         self.assertIn('id', response.data)
         self.assertEqual(Dossier.objects.count(), 1)
 
-    def test_create_lowercase_type_travaux_is_accepted_and_uppercased(self):
+    def test_create_lowercase_type_travaux_is_uppercased(self):
         payload = {
             'beneficiaire': 'Marie Martin',
             'type_travaux': 'chauffage',
@@ -52,16 +52,16 @@ class DossierListCreateTest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(response.data['type_travaux'], 'CHAUFFAGE')
 
-    def test_create_invalid_type_travaux_returns_400(self):
+    def test_create_custom_type_travaux_returns_201(self):
         payload = {
             'beneficiaire': 'Marie Martin',
-            'type_travaux': 'pompe_a_chaleur',
+            'type_travaux': 'ventilation',
             'volume': 80.0,
             'prime': 400.0,
         }
         response = self.client.post('/api/dossiers/', payload, format='json')
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn('type_travaux', response.data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data['type_travaux'], 'VENTILATION')
 
     def test_create_missing_field_returns_400(self):
         payload = {'type_travaux': 'ISOLATION', 'volume': 100.0}

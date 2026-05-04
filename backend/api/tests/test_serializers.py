@@ -45,16 +45,17 @@ class DossierSerializerTest(TestCase):
         self.assertFalse(serializer.is_valid())
         self.assertIn('beneficiaire', serializer.errors)
 
-    def test_invalid_type_travaux_is_rejected(self):
+    def test_custom_type_travaux_is_accepted(self):
         payload = {
             'beneficiaire': 'Jean Dupont',
-            'type_travaux': 'pompe_a_chaleur',
+            'type_travaux': 'ventilation',
             'volume': 100.0,
             'prime': 500.0,
         }
         serializer = DossierSerializer(data=payload)
-        self.assertFalse(serializer.is_valid())
-        self.assertIn('type_travaux', serializer.errors)
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+        dossier = serializer.save()
+        self.assertEqual(dossier.type_travaux, 'VENTILATION')
 
     def test_missing_volume_is_invalid(self):
         payload = {'beneficiaire': 'Jean Dupont', 'type_travaux': 'ISOLATION', 'prime': 500.0}

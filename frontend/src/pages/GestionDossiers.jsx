@@ -2,11 +2,17 @@ import { useState, useEffect } from 'react'
 import axios from 'axios'
 import { PlusCircle, FolderOpen, Filter, Loader2, AlertCircle } from 'lucide-react'
 
-const TYPES_TRAVAUX = [
+const TYPES_TRAVAUX_PREDEFINED = [
   { value: 'ISOLATION', label: 'Isolation' },
   { value: 'CHAUFFAGE', label: 'Chauffage' },
   { value: 'POMPE À CHALEUR', label: 'Pompe à chaleur' },
 ]
+
+const BADGE_COLORS = {
+  'ISOLATION': 'bg-blue-100 text-blue-700',
+  'CHAUFFAGE': 'bg-orange-100 text-orange-700',
+  'POMPE À CHALEUR': 'bg-purple-100 text-purple-700',
+}
 
 const INITIAL_FORM = {
   beneficiaire: '',
@@ -18,6 +24,7 @@ const INITIAL_FORM = {
 export default function GestionDossiers() {
   const [dossiers, setDossiers] = useState([])
   const [form, setForm] = useState(INITIAL_FORM)
+  const [typeLibre, setTypeLibre] = useState(false)
   const [filtre, setFiltre] = useState('')
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
@@ -45,6 +52,22 @@ export default function GestionDossiers() {
     setForm({ ...form, [e.target.name]: e.target.value })
   }
 
+  const handleTypeSelect = (e) => {
+    const val = e.target.value
+    if (val === '__autre__') {
+      setTypeLibre(true)
+      setForm({ ...form, type_travaux: '' })
+    } else {
+      setTypeLibre(false)
+      setForm({ ...form, type_travaux: val })
+    }
+  }
+
+  const resetForm = () => {
+    setForm(INITIAL_FORM)
+    setTypeLibre(false)
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (!form.beneficiaire || !form.type_travaux || !form.volume || !form.prime) {
@@ -59,7 +82,7 @@ export default function GestionDossiers() {
         volume: Number(form.volume),
         prime: Number(form.prime),
       })
-      setForm(INITIAL_FORM)
+      resetForm()
       await fetchDossiers()
     } catch {
       setFormError("Erreur lors de l'ajout du dossier.")
@@ -68,12 +91,19 @@ export default function GestionDossiers() {
     }
   }
 
+  const typesUniques = [
+    ...new Set(dossiers.map((d) => d.type_travaux)),
+  ].sort()
+
   const dossiersFiltres = filtre
     ? dossiers.filter((d) => d.type_travaux === filtre)
     : dossiers
 
+  const badgeClass = (type) =>
+    BADGE_COLORS[type] ?? 'bg-gray-100 text-gray-700'
+
   const labelType = (value) =>
-    TYPES_TRAVAUX.find((t) => t.value === value)?.label ?? value
+    TYPES_TRAVAUX_PREDEFINED.find((t) => t.value === value)?.label ?? value
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -105,17 +135,39 @@ export default function GestionDossiers() {
 
             <div className="flex flex-col gap-1">
               <label className="text-sm font-medium text-gray-600">Type de travaux</label>
-              <select
-                name="type_travaux"
-                value={form.type_travaux}
-                onChange={handleChange}
-                className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition bg-white"
-              >
-                <option value="">Sélectionner...</option>
-                {TYPES_TRAVAUX.map((t) => (
-                  <option key={t.value} value={t.value}>{t.label}</option>
-                ))}
-              </select>
+              {!typeLibre ? (
+                <select
+                  name="type_travaux"
+                  value={form.type_travaux}
+                  onChange={handleTypeSelect}
+                  className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition bg-white"
+                >
+                  <option value="">Sélectionner...</option>
+                  {TYPES_TRAVAUX_PREDEFINED.map((t) => (
+                    <option key={t.value} value={t.value}>{t.label}</option>
+                  ))}
+                  <option value="__autre__">Autre...</option>
+                </select>
+              ) : (
+                <div className="flex gap-1">
+                  <input
+                    type="text"
+                    name="type_travaux"
+                    value={form.type_travaux}
+                    onChange={handleChange}
+                    placeholder="Type personnalisé"
+                    className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => { setTypeLibre(false); setForm({ ...form, type_travaux: '' }) }}
+                    className="px-2 py-2 text-gray-400 hover:text-gray-600 text-xs border border-gray-300 rounded-lg transition"
+                    title="Revenir à la liste"
+                  >
+                    ✕
+                  </button>
+                </div>
+              )}
             </div>
 
             <div className="flex flex-col gap-1">
@@ -186,8 +238,8 @@ export default function GestionDossiers() {
                 className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition bg-white"
               >
                 <option value="">Tous les types</option>
-                {TYPES_TRAVAUX.map((t) => (
-                  <option key={t.value} value={t.value}>{t.label}</option>
+                {typesUniques.map((type) => (
+                  <option key={type} value={type}>{labelType(type)}</option>
                 ))}
               </select>
             </div>
@@ -226,11 +278,7 @@ export default function GestionDossiers() {
                     <tr key={dossier.id ?? index} className="hover:bg-gray-50 transition">
                       <td className="px-4 py-3 font-medium text-gray-800">{dossier.beneficiaire}</td>
                       <td className="px-4 py-3">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-                          ${dossier.type_travaux === 'ISOLATION' ? 'bg-blue-100 text-blue-700' : ''}
-                          ${dossier.type_travaux === 'CHAUFFAGE' ? 'bg-orange-100 text-orange-700' : ''}
-                          ${dossier.type_travaux === 'POMPE À CHALEUR' ? 'bg-purple-100 text-purple-700' : ''}
-                        `}>
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${badgeClass(dossier.type_travaux)}`}>
                           {labelType(dossier.type_travaux)}
                         </span>
                       </td>

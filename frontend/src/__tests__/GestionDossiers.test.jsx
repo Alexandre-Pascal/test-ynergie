@@ -70,7 +70,7 @@ describe('GestionDossiers', () => {
     ).toBeInTheDocument()
   })
 
-  it('soumet le formulaire correctement et réinitialise les champs', async () => {
+  it('soumet le formulaire avec un type prédéfini et réinitialise les champs', async () => {
     const user = userEvent.setup()
     renderPage()
     await waitFor(() => screen.getByText('Jean Dupont'))
@@ -78,6 +78,27 @@ describe('GestionDossiers', () => {
     await user.type(screen.getByPlaceholderText('Nom du bénéficiaire'), 'Paul Durand')
     const selects = screen.getAllByRole('combobox')
     await user.selectOptions(selects[0], 'ISOLATION')
+    await user.type(screen.getByPlaceholderText('0'), '150')
+    await user.type(screen.getByPlaceholderText('0.00'), '750')
+
+    await user.click(screen.getByRole('button', { name: /Ajouter le dossier/ }))
+
+    await waitFor(() => {
+      expect(screen.getByPlaceholderText('Nom du bénéficiaire')).toHaveValue('')
+    })
+  })
+
+  it('soumet le formulaire avec un type personnalisé via "Autre..."', async () => {
+    const user = userEvent.setup()
+    renderPage()
+    await waitFor(() => screen.getByText('Jean Dupont'))
+
+    await user.type(screen.getByPlaceholderText('Nom du bénéficiaire'), 'Paul Durand')
+    const selects = screen.getAllByRole('combobox')
+    await user.selectOptions(selects[0], '__autre__')
+
+    const inputLibre = screen.getByPlaceholderText('Type personnalisé')
+    await user.type(inputLibre, 'Ventilation')
     await user.type(screen.getByPlaceholderText('0'), '150')
     await user.type(screen.getByPlaceholderText('0.00'), '750')
 

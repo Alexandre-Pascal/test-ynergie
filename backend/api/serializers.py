@@ -14,11 +14,8 @@ class DossierSerializer(serializers.ModelSerializer):
 
     def validate_type_travaux(self, value):
         value = value.strip().upper()
-        valid = [c[0] for c in Dossier.TYPE_TRAVAUX_CHOICES]
-        if value not in valid:
-            raise serializers.ValidationError(
-                f"Type invalide. Valeurs acceptées : {', '.join(valid)}"
-            )
+        if not value:
+            raise serializers.ValidationError("Le type de travaux ne peut pas être vide.")
         return value
 
     def validate(self, data):
