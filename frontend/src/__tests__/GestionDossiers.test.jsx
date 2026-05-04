@@ -77,7 +77,7 @@ describe('GestionDossiers', () => {
 
     await user.type(screen.getByPlaceholderText('Nom du bénéficiaire'), 'Paul Durand')
     const selects = screen.getAllByRole('combobox')
-    await user.selectOptions(selects[0], 'isolation')
+    await user.selectOptions(selects[0], 'ISOLATION')
     await user.type(screen.getByPlaceholderText('0'), '150')
     await user.type(screen.getByPlaceholderText('0.00'), '750')
 
@@ -97,7 +97,7 @@ describe('GestionDossiers', () => {
     })
 
     const filtreSelect = screen.getAllByRole('combobox')[1]
-    await user.selectOptions(filtreSelect, 'isolation')
+    await user.selectOptions(filtreSelect, 'ISOLATION')
 
     expect(screen.getByText('Jean Dupont')).toBeInTheDocument()
     expect(screen.queryByText('Marie Martin')).not.toBeInTheDocument()

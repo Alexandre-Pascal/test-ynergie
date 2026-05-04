@@ -1,4 +1,3 @@
-from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 from api.models import Dossier
@@ -9,7 +8,7 @@ class DossierListCreateTest(APITestCase):
     def _make_dossier(self, **kwargs):
         defaults = {
             'beneficiaire': 'Jean Dupont',
-            'type_travaux': 'isolation',
+            'type_travaux': 'ISOLATION',
             'volume': 100.0,
             'prime': 500.0,
         }
@@ -22,8 +21,8 @@ class DossierListCreateTest(APITestCase):
         self.assertEqual(response.data, [])
 
     def test_list_returns_dossiers_in_reverse_chronological_order(self):
-        d1 = self._make_dossier(beneficiaire='Premier')
-        d2 = self._make_dossier(beneficiaire='Second')
+        self._make_dossier(beneficiaire='Premier')
+        self._make_dossier(beneficiaire='Second')
         response = self.client.get('/api/dossiers/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 2)
@@ -33,7 +32,7 @@ class DossierListCreateTest(APITestCase):
     def test_create_valid_dossier_returns_201(self):
         payload = {
             'beneficiaire': 'Marie Martin',
-            'type_travaux': 'chauffage',
+            'type_travaux': 'CHAUFFAGE',
             'volume': 80.0,
             'prime': 400.0,
         }
@@ -41,6 +40,17 @@ class DossierListCreateTest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertIn('id', response.data)
         self.assertEqual(Dossier.objects.count(), 1)
+
+    def test_create_lowercase_type_travaux_is_accepted_and_uppercased(self):
+        payload = {
+            'beneficiaire': 'Marie Martin',
+            'type_travaux': 'chauffage',
+            'volume': 80.0,
+            'prime': 400.0,
+        }
+        response = self.client.post('/api/dossiers/', payload, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data['type_travaux'], 'CHAUFFAGE')
 
     def test_create_invalid_type_travaux_returns_400(self):
         payload = {
@@ -54,7 +64,18 @@ class DossierListCreateTest(APITestCase):
         self.assertIn('type_travaux', response.data)
 
     def test_create_missing_field_returns_400(self):
-        payload = {'type_travaux': 'isolation', 'volume': 100.0}
+        payload = {'type_travaux': 'ISOLATION', 'volume': 100.0}
+        response = self.client.post('/api/dossiers/', payload, format='json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_create_duplicate_beneficiaire_same_day_returns_400(self):
+        self._make_dossier(beneficiaire='Jean Dupont', type_travaux='ISOLATION')
+        payload = {
+            'beneficiaire': 'Jean Dupont',
+            'type_travaux': 'ISOLATION',
+            'volume': 120.0,
+            'prime': 600.0,
+        }
         response = self.client.post('/api/dossiers/', payload, format='json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
@@ -64,7 +85,7 @@ class DossierDetailTest(APITestCase):
     def _make_dossier(self, **kwargs):
         defaults = {
             'beneficiaire': 'Jean Dupont',
-            'type_travaux': 'isolation',
+            'type_travaux': 'ISOLATION',
             'volume': 100.0,
             'prime': 500.0,
         }
@@ -106,7 +127,7 @@ class DossierStatsTest(APITestCase):
     def _make_dossier(self, **kwargs):
         defaults = {
             'beneficiaire': 'Jean Dupont',
-            'type_travaux': 'isolation',
+            'type_travaux': 'ISOLATION',
             'volume': 100.0,
             'prime': 500.0,
         }
@@ -121,10 +142,23 @@ class DossierStatsTest(APITestCase):
         self.assertEqual(response.data['prix_unitaire_moyen'], 0)
 
     def test_stats_with_dossiers(self):
-        self._make_dossier(volume=100.0, prime=500.0)
-        self._make_dossier(volume=100.0, prime=700.0)
+        self._make_dossier(volume=10000.0, prime=500.0)
+        self._make_dossier(beneficiaire='Marie Martin', volume=10000.0, prime=700.0)
         response = self.client.get('/api/dossiers/stats/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['total_dossiers'], 2)
-        self.assertAlmostEqual(response.data['somme_volumes'], 200.0)
-        self.assertAlmostEqual(response.data['prix_unitaire_moyen'], 6.0)
+        self.assertAlmostEqual(response.data['somme_volumes'], 20000.0)
+        self.assertAlmostEqual(response.data['prix_unitaire_moyen'], 1200.0 / 20000.0)
+
+    def test_stats_excludes_small_volumes_from_primes(self):
+        self._make_dossier(
+            beneficiaire='Grand volume', volume=15000.0, prime=800.0
+        )
+        self._make_dossier(
+            beneficiaire='Petit volume', volume=5000.0, prime=300.0
+        )
+        response = self.client.get('/api/dossiers/stats/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertAlmostEqual(response.data['somme_volumes'], 20000.0)
+        expected_prix = 800.0 / 20000.0
+        self.assertAlmostEqual(response.data['prix_unitaire_moyen'], expected_prix)

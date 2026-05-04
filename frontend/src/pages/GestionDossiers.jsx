@@ -3,9 +3,9 @@ import axios from 'axios'
 import { PlusCircle, FolderOpen, Filter, Loader2, AlertCircle } from 'lucide-react'
 
 const TYPES_TRAVAUX = [
-  { value: 'isolation', label: 'Isolation' },
-  { value: 'chauffage', label: 'Chauffage' },
-  { value: 'pompe à chaleur', label: 'Pompe à chaleur' },
+  { value: 'ISOLATION', label: 'Isolation' },
+  { value: 'CHAUFFAGE', label: 'Chauffage' },
+  { value: 'POMPE À CHALEUR', label: 'Pompe à chaleur' },
 ]
 
 const INITIAL_FORM = {
@@ -227,9 +227,9 @@ export default function GestionDossiers() {
                       <td className="px-4 py-3 font-medium text-gray-800">{dossier.beneficiaire}</td>
                       <td className="px-4 py-3">
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-                          ${dossier.type_travaux === 'isolation' ? 'bg-blue-100 text-blue-700' : ''}
-                          ${dossier.type_travaux === 'chauffage' ? 'bg-orange-100 text-orange-700' : ''}
-                          ${dossier.type_travaux === 'pompe à chaleur' ? 'bg-purple-100 text-purple-700' : ''}
+                          ${dossier.type_travaux === 'ISOLATION' ? 'bg-blue-100 text-blue-700' : ''}
+                          ${dossier.type_travaux === 'CHAUFFAGE' ? 'bg-orange-100 text-orange-700' : ''}
+                          ${dossier.type_travaux === 'POMPE À CHALEUR' ? 'bg-purple-100 text-purple-700' : ''}
                         `}>
                           {labelType(dossier.type_travaux)}
                         </span>

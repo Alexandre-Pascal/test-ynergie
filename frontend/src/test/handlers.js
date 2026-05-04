@@ -4,7 +4,7 @@ const DOSSIERS = [
   {
     id: 'aaaaaaaa-0000-0000-0000-000000000001',
     beneficiaire: 'Jean Dupont',
-    type_travaux: 'isolation',
+    type_travaux: 'ISOLATION',
     volume: 100,
     prime: 500,
     date_creation: '2026-05-01T10:00:00Z',
@@ -12,7 +12,7 @@ const DOSSIERS = [
   {
     id: 'aaaaaaaa-0000-0000-0000-000000000002',
     beneficiaire: 'Marie Martin',
-    type_travaux: 'chauffage',
+    type_travaux: 'CHAUFFAGE',
     volume: 100,
     prime: 500,
     date_creation: '2026-05-02T10:00:00Z',

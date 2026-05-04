@@ -4,9 +4,9 @@ from django.db import models
 
 class Dossier(models.Model):
     TYPE_TRAVAUX_CHOICES = [
-        ('isolation', 'Isolation'),
-        ('chauffage', 'Chauffage'),
-        ('pompe à chaleur', 'Pompe à chaleur'),
+        ('ISOLATION', 'Isolation'),
+        ('CHAUFFAGE', 'Chauffage'),
+        ('POMPE À CHALEUR', 'Pompe à chaleur'),
     ]
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)

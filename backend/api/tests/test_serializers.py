@@ -8,7 +8,7 @@ class DossierSerializerTest(TestCase):
     def _make_dossier(self, **kwargs):
         defaults = {
             'beneficiaire': 'Jean Dupont',
-            'type_travaux': 'isolation',
+            'type_travaux': 'ISOLATION',
             'volume': 100.0,
             'prime': 500.0,
         }
@@ -29,18 +29,18 @@ class DossierSerializerTest(TestCase):
         payload = {
             'id': '00000000-0000-0000-0000-000000000000',
             'beneficiaire': 'Marie Martin',
-            'type_travaux': 'chauffage',
+            'type_travaux': 'CHAUFFAGE',
             'volume': 80.0,
             'prime': 400.0,
             'date_creation': '2000-01-01T00:00:00Z',
         }
         serializer = DossierSerializer(data=payload)
-        self.assertTrue(serializer.is_valid())
+        self.assertTrue(serializer.is_valid(), serializer.errors)
         dossier = serializer.save()
         self.assertNotEqual(str(dossier.id), '00000000-0000-0000-0000-000000000000')
 
     def test_missing_beneficiaire_is_invalid(self):
-        payload = {'type_travaux': 'isolation', 'volume': 100.0, 'prime': 500.0}
+        payload = {'type_travaux': 'ISOLATION', 'volume': 100.0, 'prime': 500.0}
         serializer = DossierSerializer(data=payload)
         self.assertFalse(serializer.is_valid())
         self.assertIn('beneficiaire', serializer.errors)
@@ -57,7 +57,31 @@ class DossierSerializerTest(TestCase):
         self.assertIn('type_travaux', serializer.errors)
 
     def test_missing_volume_is_invalid(self):
-        payload = {'beneficiaire': 'Jean Dupont', 'type_travaux': 'isolation', 'prime': 500.0}
+        payload = {'beneficiaire': 'Jean Dupont', 'type_travaux': 'ISOLATION', 'prime': 500.0}
         serializer = DossierSerializer(data=payload)
         self.assertFalse(serializer.is_valid())
         self.assertIn('volume', serializer.errors)
+
+    def test_type_travaux_stored_as_uppercase(self):
+        payload = {
+            'beneficiaire': 'Jean Dupont',
+            'type_travaux': 'isolation',
+            'volume': 100.0,
+            'prime': 500.0,
+        }
+        serializer = DossierSerializer(data=payload)
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+        dossier = serializer.save()
+        self.assertEqual(dossier.type_travaux, 'ISOLATION')
+
+    def test_duplicate_beneficiaire_same_day_is_invalid(self):
+        self._make_dossier(beneficiaire='Jean Dupont', type_travaux='ISOLATION')
+        payload = {
+            'beneficiaire': 'Jean Dupont',
+            'type_travaux': 'ISOLATION',
+            'volume': 120.0,
+            'prime': 600.0,
+        }
+        serializer = DossierSerializer(data=payload)
+        self.assertFalse(serializer.is_valid())
+        self.assertIn('non_field_errors', serializer.errors)
